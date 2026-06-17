@@ -1,0 +1,6 @@
+key,value
+ya_token,YA_DIRECT_TOKEN
+client_login,example-client
+kick_clicks_limit_yesterday,3
+kick_campaign_ids,123456;789012
+test_mode,true

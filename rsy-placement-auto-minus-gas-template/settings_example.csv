@@ -1,0 +1,2 @@
+login,token,client_login,goal_ids,cpl_multiplier,ctr_limit,ctr_min_impr,bounce_limit,bounce_min_clicks,drr_limit_pct,test_mode
+example,YA_DIRECT_TOKEN,example-client,12345,3,0.5,100,80,20,100,true

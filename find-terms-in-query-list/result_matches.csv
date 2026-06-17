@@ -1,0 +1,2 @@
+row_id,query,matched,terms,terms_lemmas,match_types,query_lemmas
+1,купить детское кресло,1,детский кресло,детский кресло,phrase_window,купить детский кресло

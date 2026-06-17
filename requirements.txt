@@ -1,0 +1,10 @@
+pandas
+pymorphy3
+pymorphy3-dicts-ru
+nltk
+requests
+beautifulsoup4
+selenium
+webdriver-manager
+anticaptchaofficial
+openpyxl

@@ -1,0 +1,24 @@
+folder,title,type,source_path,article
+semantic-core-unique-phrases-gui,GUI-анализатор уникальных фраз,python,KeywordVSKeyword/phrase_analyzer.py,https://vc.ru/marketing/2131617-sravnenie-semanticheskikh-yader-v-kontekstnoi-reklame
+collect-keywords-by-campaign,Сбор ключей по кампаниям,python,Сбор таргетингов/script.py,
+word-frequency-dictionary,Частотный словарь слов,python,PythonWordsF/script.py,https://vc.ru/marketing/1854076-skripty-python-dlya-yandeks-direkta-n-gram-analiz-klasterizator-chastotnyi-slovar
+minus-words-morphology-filter,Фильтр фраз по минус-словам,python,Minus/script.py,
+find-terms-in-query-list,Поиск терминов из списка 2 в списке 1,python,Нахождение списка 2 из списка 1/script.py,
+yandex-direct-campaign-kicker-gas,Пиналка кампаний Яндекс Директа,apps-script,Пиналка/Пиналка,
+direct-autotargeting-duplicate-cleaner,Чистка дублей автотаргетинга,python,RSYAStructure/process_ads.py,
+yandex-audience-geo-segments,Создание геосегментов Яндекс Аудиторий,python,Audience_radius_create/script.py,https://vc.ru/marketing/2150647-sozdanie-geotochok-v-yandeks-auditoriyakh-s-pomoshchyu-skripta-api
+keyword-clusterizer,Кластеризатор ключевых фраз,python,ScriptCluster/script.py,https://vc.ru/marketing/1854076-skripty-python-dlya-yandeks-direkta-n-gram-analiz-klasterizator-chastotnyi-slovar
+yandex-serp-query-relevance,Проверка релевантности выдачи Яндекса,python,SEO-QUERY/python.py,https://vc.ru/marketing/2174767-proverka-relevantnosti-vydachi-yandeksa-na-python
+yandex-direct-strategy-export,Выгрузка стратегий кампаний,python,Выгрузка стратегий/script.py,
+html-contact-extractor,Извлечение телефонов и email из HTML,python,INJEcTPHONE/main.py,
+search-query-report-updater-gas,Обновление отчетов по поисковым запросам,apps-script,Чистка поисковых запросов/Сам скрипт,
+direct-region-json-builder,Формирование JSON регионов Директа,python,geo_id_match/script.py,https://vc.ru/marketing/2143954-skript-na-python-dlya-formirovaniya-formata-yandeks-direkta-po-regionam
+rsy-fraud-platform-list,Список фродовых площадок РСЯ,python,BLACKLIST/script.py,https://vc.ru/marketing/2130372-skript-dlya-sostavleniya-spiska-frodovykh-ploshchadok-v-rsya
+yandex-direct-ngram-analysis,N-gram анализ поисковых запросов,python,ScriptNGRAM/script.py,https://vc.ru/marketing/1854076-skripty-python-dlya-yandeks-direkta-n-gram-analiz-klasterizator-chastotnyi-slovar
+keyword-case-variants,Генератор падежных вариантов ключей,python,MorphyKeyword/script.py,
+direct-minus-list-marker,Пометка фраз по списку минус-слов,python,Исключение списка слов из текущей выборки/script.py,
+direct-ad-elements-extractor,Выгрузка уникальных элементов объявлений,python,InjectElements/script.py,https://vc.ru/marketing/2143622-skript-dlya-vygruzki-unikalnykh-ob-yavleniy-iz-yandeks-direkta
+direct-stop-by-substrings,Остановка фраз по подстрокам,python,PythonProject2/mark_stop_by_contains.py,
+competitor-domain-serp-relevance,Проверка выдачи по доменам конкурентов,python,Yandex Disk: Поиск конкурентов/script.py,https://vc.ru/marketing/2250844-proverka-relevantnosti-domenov-konkurentov-v-kontekstnoi-reklame-cherez-python
+direct-404-monitor-gas,Проверка ссылок Директа на 404 в Google Sheets,apps-script,Yandex Disk: Скрипты под 404,https://vc.ru/marketing/2655479-avtomaticheskaya-proverka-silok-yandeks-direkta-na-404-s-otpravkoy-v-tg
+rsy-placement-auto-minus-gas-template,Автоматическое минусование площадок РСЯ через Google Sheets,apps-script-template,Google Sheet template,https://vc.ru/marketing/2698195-avtomatizatsiya-minusovaniya-ploshchadok-v-rsya-s-pomoshchyu-google-tablic
