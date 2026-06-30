@@ -38,4 +38,5 @@ rg -n 'y0__|YA_DIRECT_TOKEN_REAL|ANTICAPTCHA_KEY = "[0-9a-f]' --glob '!README.md
 
 ## Вопросы
 По всем вопросам: https://t.me/burdyugovd
+
 Подписывайтесь на блог: https://t.me/marketing_burdyugov
