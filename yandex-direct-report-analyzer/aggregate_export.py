@@ -269,7 +269,19 @@ def empty_metrics() -> dict[str, float]:
 
 
 def is_inactive(metrics: dict[str, float]) -> bool:
-    return all(metrics[key] == 0 for key in ("clicks", "cost", "conversions", "revenue", "orders"))
+    # Строки только с показами нужны для корректного знаменателя CTR.
+    # Исключаем строку лишь тогда, когда в ней нет ни одной учитываемой метрики.
+    return all(
+        metrics[key] == 0
+        for key in (
+            "impressions",
+            "clicks",
+            "cost",
+            "conversions",
+            "revenue",
+            "orders",
+        )
+    )
 
 
 def make_context(spec: dict, row: list[object], base: dict[str, int | None], slice_map: dict[str, dict]) -> str:

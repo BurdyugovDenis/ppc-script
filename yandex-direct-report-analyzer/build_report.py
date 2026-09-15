@@ -115,6 +115,7 @@ def score_row(
     aov_available: bool,
     aov_from_conversions: bool,
 ) -> dict:
+    impressions = float(row.get("impressions") or 0)
     clicks = float(row.get("clicks") or 0)
     conversions = float(row.get("conversions") or 0)
     cost = float(row.get("cost") or 0)
@@ -124,6 +125,8 @@ def score_row(
     campaign_key = row.get("campaign_id") or row.get("campaign") or ""
     campaign_kpi = campaign_kpis.get(campaign_key, {}) if inner else {}
 
+    ctr = safe_divide(clicks, impressions)
+    cpc = safe_divide(cost, clicks)
     cr = safe_divide(conversions, clicks)
     cpl = safe_divide(cost, conversions)
     drr = safe_divide(cost, revenue) if drr_available else None
@@ -236,6 +239,8 @@ def score_row(
         reason = "Погрешность выше 30%"
 
     return {
+        "ctr": ctr,
+        "cpc": cpc,
         "cr": cr,
         "cpl": cpl,
         "drr": drr,
@@ -279,7 +284,10 @@ def headers_for(
         context_header,
         "Расход, ₽",
         "Доля расхода в скопе, %",
+        "Показы",
         "Клики",
+        "CTR",
+        "CPC, ₽",
         "Конверсии",
     ]
     if revenue_available:
@@ -366,7 +374,10 @@ def row_values(
         "Источник запроса": row.get("context") or None,
         "Расход, ₽": float(row.get("cost") or 0),
         "Доля расхода в скопе, %": safe_divide(float(row.get("cost") or 0), scope_cost),
+        "Показы": float(row.get("impressions") or 0),
         "Клики": float(row.get("clicks") or 0),
+        "CTR": calculation["ctr"],
+        "CPC, ₽": calculation["cpc"],
         "Конверсии": float(row.get("conversions") or 0),
         "CR": calculation["cr"],
         "CPL, ₽": calculation["cpl"],
@@ -600,6 +611,7 @@ def format_analysis_sheet(ws, headers: list[str], table_name: str) -> None:
     money = {
         "Расход, ₽",
         "Выручка, ₽",
+        "CPC, ₽",
         "CPL, ₽",
         "AOV, ₽",
         "KPI CPL кампании, ₽",
@@ -609,6 +621,7 @@ def format_analysis_sheet(ws, headers: list[str], table_name: str) -> None:
     }
     percentages = {
         "Доля расхода в скопе, %",
+        "CTR",
         "CR",
         "Погрешность",
         "ДРР",
@@ -631,7 +644,7 @@ def format_analysis_sheet(ws, headers: list[str], table_name: str) -> None:
             number_format = "+0.0%;-0.0%;0.0%"
         elif header in multiples:
             number_format = '0.00"×"'
-        elif header in {"Клики", "Конверсии", "Количество заказов"}:
+        elif header in {"Показы", "Клики", "Конверсии", "Количество заказов"}:
             number_format = "#,##0"
         if number_format:
             for (target,) in ws.iter_rows(
@@ -686,7 +699,16 @@ def write_summary(
     summary_rows = [
         ("Показатель", "Значение"),
         ("Расход, ₽", data["source_total"].get("cost")),
+        ("Показы", data["source_total"].get("impressions")),
         ("Клики", data["source_total"].get("clicks")),
+        (
+            "CTR",
+            safe_divide(
+                data["source_total"].get("clicks", 0),
+                data["source_total"].get("impressions", 0),
+            ),
+        ),
+        ("CPC, ₽", safe_divide(data["source_total"].get("cost", 0), data["source_total"].get("clicks", 0))),
         ("Конверсии", data["source_total"].get("conversions")),
         ("CR", safe_divide(data["source_total"].get("conversions", 0), data["source_total"].get("clicks", 0))),
         ("CPL, ₽", all_kpi.get("cpl")),
@@ -746,11 +768,12 @@ def write_summary(
     )
     for row in range(5, status_header_row):
         label = ws.cell(row, 1).value
-        if label in {"Расход, ₽", "CPL, ₽", "Выручка, ₽", "AOV, ₽"}:
+        if label in {"Расход, ₽", "CPC, ₽", "CPL, ₽", "Выручка, ₽", "AOV, ₽"}:
             ws.cell(row, 2).number_format = '#,##0.00 "₽"'
-        elif label in {"CR", "ДРР", "ROMI"}:
+        elif label in {"CTR", "CR", "ДРР", "ROMI"}:
             ws.cell(row, 2).number_format = "0.00%"
         elif label in {
+            "Показы",
             "Клики",
             "Конверсии",
             "Количество заказов",
@@ -787,7 +810,16 @@ def write_method(ws, data: dict, all_kpi: dict) -> None:
         ("Источник", data.get("source")),
         ("Период", data.get("period")),
         ("Общий расход, ₽", data["source_total"].get("cost")),
+        ("Общие показы", data["source_total"].get("impressions")),
         ("Общие клики", data["source_total"].get("clicks")),
+        (
+            "CTR всех РК",
+            safe_divide(
+                data["source_total"].get("clicks", 0),
+                data["source_total"].get("impressions", 0),
+            ),
+        ),
+        ("CPC всех РК, ₽", safe_divide(data["source_total"].get("cost", 0), data["source_total"].get("clicks", 0))),
         ("Общие конверсии", data["source_total"].get("conversions")),
         ("KPI CPL всех РК, ₽", all_kpi.get("cpl")),
     ]
@@ -801,6 +833,8 @@ def write_method(ws, data: dict, all_kpi: dict) -> None:
         rows.append(("KPI AOV всех РК, ₽", all_kpi.get("aov")))
     rows.extend([
         ("Формула", "Определение"),
+        ("CTR", "Клики / Показы"),
+        ("CPC", "Расход / Клики"),
         ("CR", "Конверсии / Клики"),
         ("CPL", "Расход / Конверсии"),
         ("Погрешность Wilson 95%", "z×√(CR×(1−CR)/Клики+z²/(4×Клики²))/(CR+z²/(2×Клики))"),
@@ -825,6 +859,10 @@ def write_method(ws, data: dict, all_kpi: dict) -> None:
     rows.extend([
         ("Правило устойчивости", "Погрешность ≤30%; CR=100% требует не менее 10 кликов"),
         ("Неопределённые сегменты", "Исключены из таблиц, но сохранены в KPI"),
+        (
+            "Критерий неактивной строки",
+            "Исключается только строка без показов, кликов, расхода, конверсий, выручки и заказов",
+        ),
         ("Недоступные срезы", ", ".join(data.get("unavailable_dimensions", [])) or "Нет"),
         ("Недоступные метрики", ", ".join(data.get("unavailable_metrics", [])) or "Нет"),
         ("Отключённые метрики", ", ".join(data.get("disabled_metrics", [])) or "Нет"),
@@ -856,11 +894,11 @@ def write_method(ws, data: dict, all_kpi: dict) -> None:
         label = ws.cell(row, 1).value
         if label == "Порог статистической погрешности":
             ws.cell(row, 2).number_format = "0%"
-        elif label in {"Общий расход, ₽", "Общая выручка, ₽", "KPI CPL всех РК, ₽", "KPI AOV всех РК, ₽", "Расхождение итогов, ₽"}:
+        elif label in {"Общий расход, ₽", "CPC всех РК, ₽", "Общая выручка, ₽", "KPI CPL всех РК, ₽", "KPI AOV всех РК, ₽", "Расхождение итогов, ₽"}:
             ws.cell(row, 2).number_format = '#,##0.00 "₽"'
-        elif label in {"KPI ДРР всех РК", "KPI ROMI всех РК"}:
+        elif label in {"CTR всех РК", "KPI ДРР всех РК", "KPI ROMI всех РК"}:
             ws.cell(row, 2).number_format = "0.00%"
-        elif label in {"Малая выборка при CR=100%, кликов", "Общие клики", "Общие конверсии", "Детальных строк", "Неактивных строк исключено", "Строк с конверсиями > кликов"}:
+        elif label in {"Малая выборка при CR=100%, кликов", "Общие показы", "Общие клики", "Общие конверсии", "Детальных строк", "Неактивных строк исключено", "Строк с конверсиями > кликов"}:
             ws.cell(row, 2).number_format = "#,##0"
     ws.freeze_panes = "A2"
     ws.sheet_view.showGridLines = False

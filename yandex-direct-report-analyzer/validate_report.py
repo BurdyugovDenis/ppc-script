@@ -128,7 +128,10 @@ def main() -> None:
         "Сегмент",
         "Расход, ₽",
         "Доля расхода в скопе, %",
+        "Показы",
         "Клики",
+        "CTR",
+        "CPC, ₽",
         "Конверсии",
         "CR",
         "CPL, ₽",
@@ -218,6 +221,11 @@ def main() -> None:
         query_source_col = None
         campaign_col = None
         query_keys: set[tuple[str, str, str, str]] = set()
+        impressions_col = headers.index("Показы") + 1
+        clicks_col = headers.index("Клики") + 1
+        ctr_col = headers.index("CTR") + 1
+        cost_col = headers.index("Расход, ₽") + 1
+        cpc_col = headers.index("CPC, ₽") + 1
         if query_category_sheet:
             if "Источник запроса" not in headers:
                 raise SystemExit(
@@ -277,9 +285,42 @@ def main() -> None:
                     )
                 query_keys.add(query_key)
 
+        # CTR и CPC должны рассчитываться из агрегированных числителей и знаменателей
+        # каждой строки, а при нулевом знаменателе оставаться пустыми.
+        first_metric_col = min(impressions_col, clicks_col, ctr_col, cost_col, cpc_col)
+        last_metric_col = max(impressions_col, clicks_col, ctr_col, cost_col, cpc_col)
+        for row_number, values in enumerate(
+            sheet.iter_rows(
+                min_row=2,
+                min_col=first_metric_col,
+                max_col=last_metric_col,
+                values_only=True,
+            ),
+            start=2,
+        ):
+            impressions = float(values[impressions_col - first_metric_col] or 0)
+            clicks = float(values[clicks_col - first_metric_col] or 0)
+            cost = float(values[cost_col - first_metric_col] or 0)
+            actual_ctr = values[ctr_col - first_metric_col]
+            actual_cpc = values[cpc_col - first_metric_col]
+            expected_ctr = clicks / impressions if impressions else None
+            expected_cpc = cost / clicks if clicks else None
+            for label, actual, expected in (
+                ("CTR", actual_ctr, expected_ctr),
+                ("CPC", actual_cpc, expected_cpc),
+            ):
+                if actual is None and expected is None:
+                    continue
+                if actual is None or expected is None or not close(actual, expected, tolerance=1e-9):
+                    raise SystemExit(
+                        f"{label} mismatch on {sheet_name}!row {row_number}: "
+                        f"workbook={actual}, expected={expected}"
+                    )
+
         money = {
             "Расход, ₽",
             "Выручка, ₽",
+            "CPC, ₽",
             "CPL, ₽",
             "AOV, ₽",
             "KPI CPL кампании, ₽",
@@ -289,6 +330,7 @@ def main() -> None:
         }
         percentages = {
             "Доля расхода в скопе, %",
+            "CTR",
             "CR",
             "Погрешность",
             "ДРР",
@@ -310,7 +352,7 @@ def main() -> None:
                 return "+0.0%;-0.0%;0.0%"
             if isinstance(header, str) and "KPI CPL" in header and header.endswith("×"):
                 return '0.00"×"'
-            if header in {"Клики", "Конверсии", "Количество заказов"}:
+            if header in {"Показы", "Клики", "Конверсии", "Количество заказов"}:
                 return "#,##0"
             return None
 
@@ -363,6 +405,7 @@ def main() -> None:
 
     summary_sheet = workbook["Резюме"]
     summary_count_labels = {
+        "Показы",
         "Клики",
         "Конверсии",
         "Количество заказов",
@@ -393,9 +436,31 @@ def main() -> None:
                         )
             break
 
+    total_impressions = float(data["source_total"].get("impressions") or 0)
+    total_clicks = float(data["source_total"].get("clicks") or 0)
+    total_cost = float(data["source_total"].get("cost") or 0)
+    expected_summary_metrics = {
+        "Показы": total_impressions,
+        "CTR": total_clicks / total_impressions if total_impressions else None,
+        "CPC, ₽": total_cost / total_clicks if total_clicks else None,
+    }
+    summary_values = {
+        summary_sheet.cell(row_number, 1).value: summary_sheet.cell(row_number, 2).value
+        for row_number in range(1, summary_sheet.max_row + 1)
+    }
+    for label, expected in expected_summary_metrics.items():
+        actual = summary_values.get(label)
+        if actual is None and expected is None:
+            continue
+        if actual is None or expected is None or not close(actual, expected, tolerance=1e-9):
+            raise SystemExit(
+                f"Summary {label} mismatch: workbook={actual}, expected={expected}"
+            )
+
     method_sheet = workbook["Методика"]
     method_count_labels = {
         "Малая выборка при CR=100%, кликов",
+        "Общие показы",
         "Общие клики",
         "Общие конверсии",
         "Детальных строк",
@@ -410,12 +475,31 @@ def main() -> None:
                     f"Методика!B{row_number}: number format={actual_format}; expected #,##0"
                 )
 
+    method_values = {
+        method_sheet.cell(row_number, 1).value: method_sheet.cell(row_number, 2).value
+        for row_number in range(1, method_sheet.max_row + 1)
+    }
+    expected_method_metrics = {
+        "Общие показы": total_impressions,
+        "CTR всех РК": total_clicks / total_impressions if total_impressions else None,
+        "CPC всех РК, ₽": total_cost / total_clicks if total_clicks else None,
+    }
+    for label, expected in expected_method_metrics.items():
+        actual = method_values.get(label)
+        if actual is None and expected is None:
+            continue
+        if actual is None or expected is None or not close(actual, expected, tolerance=1e-9):
+            raise SystemExit(
+                f"Method {label} mismatch: workbook={actual}, expected={expected}"
+            )
+
     campaign_sheet = workbook["Название кампании"]
     campaign_headers = [
         cell.value for cell in next(campaign_sheet.iter_rows(min_row=1, max_row=1))
     ]
     control_columns = {
         "cost": "Расход, ₽",
+        "impressions": "Показы",
         "clicks": "Клики",
         "conversions": "Конверсии",
     }
